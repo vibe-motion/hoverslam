@@ -26,10 +26,14 @@ import { PRESETS } from '../../scene/layout.js';
 import { FlightLog } from './timeline.js';
 import { FlightEdit } from './edit.js';
 import { FlightHUD } from './hud.js';
+import { FlightTrajectories } from './trajectories.js';
 import { FLIGHT_UI, FLIGHT_CSS, FLIGHT_GROUPS } from './ui.js';
 
 /** Known soft-body runs (shown when their .sim exists); ?run= may name any other flight-*.sim. */
 const RUNS = [
+  { id: 'nonconvex-stop', label: '落地刹停.非凸', sub: '35% 最小油门 · 接地倾角 ≤ 5° · 触地后全刹车' },
+  { id: 'nonconvex-pad', label: '定点降落.非凸', sub: '35% 最小油门 · 靶心误差 ≤ 1.5 m · 触地水平速度 ≤ 0.5 m/s' },
+  // Original upstream examples remain available whenever their recordings are generated.
   { id: 'soft', label: '软着陆', sub: '车头俯冲 · 自动驾驶 ap · 刹停' },
   { id: 'recover', label: '翻滚改出', sub: '倒扣车顶 · 自动驾驶 ap · 刹停' },
   { id: 'hard', label: '硬着陆', sub: '倒扣车顶 · 点火延迟 0.6 s' },
@@ -44,11 +48,14 @@ const RUNS = [
   { id: 'two-costs-first-nose3', label: 'MPC · 托着往下放', sub: '车头俯冲 · 代价无用气项、下落速度计价（gas-two-costs）' },
   { id: 'two-costs-second-nose3', label: 'MPC · 自杀式点火', sub: '车头俯冲 · 代价加用气项（gas-two-costs）' },
 ];
-const runName = id => (id.startsWith('flight-') ? id.slice(7) : id);
+const runName = id => {
+  const name = id.startsWith('flight-') ? id.slice(7) : id;
+  return name === 'dual-recovery35-flat' ? 'nonconvex-pad' : name; // Preserve bookmarks to the accepted pad demo.
+};
 const ctlLabel = c => (!c ? '' : c === 'ap' ? '自动驾驶 ap' : c === 'pd' ? '孪生 pd' : c === 'mppi' ? 'MPPI 闭环' : c === 'mpc' ? '纯 MPC（无 PD）' : c.startsWith('replay:') ? `开环回放 ${c.slice(7)}` : c);
 
 export default class FlightProgram extends Program {
-  static meta = { id: 'flight', title: '坠 · 冷气推力着陆' };
+  static meta = { id: 'flight', title: 'JetCar Mini · 冷气推力着陆' };
 
   async init() {
     const { stage, ui, assets, params } = this.ctx;
@@ -67,13 +74,15 @@ export default class FlightProgram extends Program {
     this.view.extraProbeHidden = this.plumes.objects;
     this.nom = nozzleNominal();
     this.hud = new FlightHUD();
+    this.trajectories = new FlightTrajectories({ root: ui.root, camera: stage.camera });
+    this.visualOptions = { trail: true, planning: false, exploration: false };
     this.filmHud = params.get('hud') !== '0';
     ui.mount(FLIGHT_UI);
-    ui.root.appendChild(this.hud.canvas);
     this.controls = new OrbitControls(stage.camera, stage.renderer.domElement);
     this.controls.enableDamping = true; this.controls.enabled = false;
     this.mode = params.get('mode') || 'director';
     this.speed = 1; this.playing = !params.has('paused');
+    this.looping = false;
     this.T = +(params.get('T') || 0); this.simT = 0;
     this.setupUI();
     await this.world.ready;
@@ -81,7 +90,7 @@ export default class FlightProgram extends Program {
     if (params.has('traj')) await this.loadTrajectory(params.get('traj'));
     else {
       const avail = await this.listRuns();
-      await this.loadRun(params.get('run') || avail[0]?.id || 'soft');
+      await this.loadRun(params.get('run') || avail[0]?.id || 'nonconvex-pad');
     }
     const self = this;
     this.film = {
@@ -108,7 +117,7 @@ export default class FlightProgram extends Program {
       b.onclick = () => this.loadRun(r.id);
       box.appendChild(b);
     }
-    if (!this.runs.length) box.innerHTML = '<p id="fnote">还没有飞行记录：<code>node tools/sim/flight.mjs preset=nose controller=ap out=soft</code></p>';
+    if (!this.runs.length) box.innerHTML = '<p id="fnote">还没有飞行记录：<code>npm run demos:generate</code></p>';
     return this.runs;
   }
 
@@ -126,7 +135,7 @@ export default class FlightProgram extends Program {
     this.metrics = meta.flight?.metrics || {};
     this.task = loadTask(TASKS[meta.flight?.task] ? meta.flight.task : 'escape-soft-landing');
     const preset = PRESETS[meta.flight?.preset];
-    this.label = { title: '坠 · FALL', sub: `冷气推力 · ${preset?.label || meta.flight?.preset || ''} · ${ctlLabel(meta.flight?.controller)}${meta.flight?.armDelay ? ` · 点火延迟 ${meta.flight.armDelay} s` : ''} · 软体` };
+    this.label = { title: 'QQ飛車', sub: `Jet-Car Mini · 冷气推力 · ${preset?.label || meta.flight?.preset || ''} · ${ctlLabel(meta.flight?.controller)}${meta.flight?.armDelay ? ` · 点火延迟 ${meta.flight.armDelay} s` : ''} · 软体` };
     this.afterLoad();
     document.querySelectorAll('#runs button').forEach(b => b.classList.toggle('on', b.dataset.run === id));
     const r = this.runs?.find(x => x.id === id); if (r) document.querySelector(`#runs button[data-run="${id}"]`)?.classList.add(this.metrics.success ? 'ok' : 'fail');
@@ -142,18 +151,20 @@ export default class FlightProgram extends Program {
     this.source = { kind: 'rigid', traj: url, producer: traj.producer, controller: traj.controller, model: traj.model };
     this.rigid = true;
     this.view.player = null;
-    this.log = new FlightLog(traj, { flight: { events: traj.events || [] }, duration: traj.t[traj.t.length - 1] });
+    this.log = new FlightLog(traj, { flight: { events: traj.events || [], metrics: traj.metrics, planningTrace: traj.planningTrace }, duration: traj.t[traj.t.length - 1] });
     this.plumes.setTrack(trackFromTrajectory(traj));
     this.metrics = traj.metrics || {};
     { const id = typeof traj.task === 'string' ? traj.task : traj.task?.id; this.task = loadTask(TASKS[id] ? id : 'escape-soft-landing'); }
     const ctl = typeof traj.controller === 'string' ? traj.controller : traj.controller?.name || traj.controller?.type || '';
-    this.label = { title: '坠 · FALL', sub: `刚体回放 · ${traj.preset || ''} · ${ctl} · ${traj.producer || ''}` };
+    this.label = { title: 'QQ飛車', sub: `Jet-Car Mini · 刚体回放 · ${traj.preset || ''} · ${ctl} · ${traj.producer || ''}` };
     this.ctx.ui.$('runs').innerHTML = '';
     this.ctx.ui.$('fnote').innerHTML = `刚体孪生轨迹回放（未变形车身）<br><code>${url}</code>`;
     this.afterLoad();
   }
 
   afterLoad() {
+    this.trajectories.setLog(this.log, this.task?.pad);
+    this.updateVisualizationUI();
     const success = this.metrics.success !== undefined ? !!this.metrics.success : true;
     this.edit = new FlightEdit(this.log, { success });
     if (this.edit.roll && this.label) this.label.sub += " · 跳跃 · 横滚 360°";
@@ -168,31 +179,110 @@ export default class FlightProgram extends Program {
   setupUI() {
     const { ui } = this.ctx, $ = ui.$;
     const tr = (this.transport = new Transport(ui, {
-      onPlay: () => { this.playing = !this.playing; tr.setPlaying(this.playing); },
-      onSeek: u => { if (this.mode === 'director' && this.edit) this.T = u * this.edit.total; else { const [a, b] = this.timeRange(); this.simT = a + u * (b - a); } },
+      onPlay: () => {
+        if (!this.playing && this.atPlaybackEnd()) this.restartPlayback();
+        this.playing = !this.playing; tr.setPlaying(this.playing);
+      },
+      onReset: () => { this.restartPlayback(); this.playing = false; tr.setPlaying(false); },
+      onLoop: on => { this.looping = on; tr.setLooping(on); },
+      onSeek: u => {
+        if (this.mode === 'director' && this.edit) this.T = u >= 1 ? Math.max(0, this.edit.total - 1e-8) : u * this.edit.total;
+        else { const [a, b] = this.timeRange(); this.simT = a + u * (b - a); }
+        if (u >= 1) { this.playing = false; tr.setPlaying(false); }
+      },
     }));
+    tr.setPlaying(this.playing);
     tr.addGroup(FLIGHT_GROUPS.modes, 'modes');
     tr.addGroup(FLIGHT_GROUPS.speeds, 'speeds');
     tr.addGroup(FLIGHT_GROUPS.view);
+    ui.mount('<div id="status-dock" aria-label="飞行状态遥测"></div><div id="instrument-dock" aria-label="底部仪表区"><div id="instrument-flow"></div></div>');
+    this.hud.mountLive($('instrument-flow'));
+    $('status-dock').appendChild(this.hud.live.status);
+    ui.mount(`<section id="visual-controls" class="visual-controls" aria-label="轨迹与规划遥测"><h2>轨迹 · 规划</h2><div class="visual-switches">${FLIGHT_GROUPS.trajectories}</div><div id="trajectory-legend" hidden></div></section>`);
+    $('instrument-flow').appendChild($('visual-controls'));
+    this.setupPanelLayout();
+    for (const [id, key] of [['b-trail', 'trail'], ['b-plan', 'planning'], ['b-explore', 'exploration']]) {
+      $(id).onclick = () => {
+        this.visualOptions[key] = !this.visualOptions[key];
+        this.updateVisualizationUI();
+      };
+    }
+    this.updateVisualizationUI();
     document.querySelectorAll('#modes button').forEach(b => (b.onclick = () => this.setMode(b.dataset.mode)));
     document.querySelectorAll('#speeds button').forEach(b => (b.onclick = () => { this.speed = +b.dataset.speed; document.querySelectorAll('#speeds button').forEach(x => x.classList.toggle('on', x === b)); }));
     $('b-plume').onclick = () => { const on = !$('b-plume').classList.contains('on'); this.plumes.visible = on; $('b-plume').classList.toggle('on', on); };
-    $('b-tele').onclick = () => { const on = !$('b-tele').classList.contains('on'); this.hud.canvas.style.display = on ? '' : 'none'; $('b-tele').classList.toggle('on', on); };
-    $('b-ui').onclick = () => document.body.classList.toggle('clean');
-    addEventListener('keydown', e => { if (e.key === 'h' || e.key === 'H') document.body.classList.toggle('clean'); if (e.key === ' ') $('b-play').click(); });
+    $('b-tele').onclick = () => { const on = !$('b-tele').classList.contains('on'); $('instrument-dock').hidden = !on; $('status-dock').hidden = !on; this.hud.live.verdict.style.display = on ? '' : 'none'; $('b-tele').classList.toggle('on', on); };
+    const setClean = hidden => {
+      document.body.classList.toggle('clean', hidden);
+      // Hidden controls must also leave keyboard navigation, while the restore button stays accessible.
+      for (const el of [this.transport.el, $('fpanel'), $('instrument-dock'), $('status-dock')]) el.inert = hidden;
+      (hidden ? $('b-ui-restore') : $('b-ui')).focus({ preventScroll: true });
+    };
+    $('b-ui').onclick = () => setClean(true);
+    $('b-ui-restore').onclick = () => setClean(false);
+    addEventListener('keydown', e => {
+      if (e.key === 'h' || e.key === 'H') {
+        if (!e.repeat && !e.target?.isContentEditable && !['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)) setClean(!document.body.classList.contains('clean'));
+      }
+      if (e.key === ' ') {
+        const target = e.target, tag = target?.tagName;
+        if (target?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault(); $('b-play').click();
+      }
+    });
     this.setMode(this.mode);
   }
 
   setMode(mode) {
+    const prevMode = this.mode;
     this.mode = mode;
     document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
-    this.controls.enabled = mode === 'free';
+    this.controls.enabled = mode === 'free' || mode === 'follow';
+    this.controls.enablePan = mode !== 'follow';
     document.body.classList.toggle('cinema', mode === 'director');
-    if (mode !== 'director' && this.lastEval) this.simT = this.lastEval.t;
+    if (prevMode === 'director' && mode !== 'director' && this.lastEval) this.simT = this.lastEval.t;
     if (mode === 'free' && this.log) { const c = this.log.p(this.simT); this.controls.target.set(c[0], c[1], c[2]); }
+    if (mode === 'follow' && this.log) {
+      const c = this.log.p(this.simT), cam = this.ctx.stage.camera;
+      this.controls.target.set(c[0], c[1], c[2]);
+      if (!this._followReady) cam.position.copy(this.controls.target).add(new THREE.Vector3(7.5, 3.0, 6.5));
+      this._followReady = true;
+      cam.fov = 45; cam.updateProjectionMatrix();
+      this.controls.update();
+    }
     this.buildMarks();
   }
+  updateVisualizationUI() {
+    this.trajectories.setOptions(this.visualOptions);
+    const $ = this.ctx.ui.$, available = this.trajectories.hasPlanning;
+    for (const [id, key] of [['b-trail', 'trail'], ['b-plan', 'planning'], ['b-explore', 'exploration']]) {
+      const button = $(id);
+      if (!button) continue;
+      button.classList.toggle('on', this.visualOptions[key]);
+      button.setAttribute('aria-pressed', String(this.visualOptions[key]));
+      if (key !== 'trail') {
+        button.disabled = !available || (key === 'exploration' && !this.visualOptions.planning);
+        button.title = available ? (key === 'planning' ? '显示当前规划与短期预测' : '显示本次求解的候选路径') : '此录制未保存规划';
+      }
+    }
+    const legend = $('trajectory-legend');
+    if (legend) {
+      legend.hidden = !this.visualOptions.trail && !this.visualOptions.planning;
+      legend.innerHTML = `${this.visualOptions.trail ? '<span style="color:#93D3B8">━ 实际轨迹</span><span style="color:#D94A58">× 实际着陆</span>' : ''}${this.visualOptions.planning && available ? '<span style="color:#F2C879">━ 上层规划</span><span style="color:#78C9ED">━ 短期预测</span><span style="color:#397DE0">＋ 预测着陆</span>' : ''}${this.visualOptions.planning && this.visualOptions.exploration && available ? '<span style="color:#A79BBB">━ 时间候选</span>' : ''}${!available ? '<span>此录制未保存规划</span>' : ''}`;
+    }
+  }
   timeRange() { return [-2.5, this.log?.duration || 6]; }
+
+  atPlaybackEnd() {
+    const end = this.mode === 'director' ? this.edit?.total || 0 : this.timeRange()[1];
+    const t = this.mode === 'director' ? this.T : this.simT;
+    return end > 0 && t >= end - 1e-8;
+  }
+
+  restartPlayback() {
+    if (this.mode === 'director') this.T = 0;
+    else this.simT = this.timeRange()[0];
+  }
 
   buildMarks() {
     if (!this.edit) { this.transport.setMarks([]); return; }
@@ -242,12 +332,13 @@ export default class FlightProgram extends Program {
     const m = this.metrics;
     const verdict = t >= e.tTouch + 0.2 && m.touchdown_vertical_speed !== undefined
       ? { success: !!m.success, vs: m.touchdown_vertical_speed, tilt: m.touchdown_tilt_deg, rate: m.touchdown_angular_rate, hull: !!m.hull_strike, crit: this.task?.success, hold: m.max_tilt_hold_deg,
+        padDistance: m.pad_distance, horizontalSpeed: m.touchdown_horizontal_speed,
         note: `${this.rigid ? '刚体孪生' : '软体'} · 用气 ${(m.gas_used_kg ?? 0).toFixed(1)} kg${m.peak_accel_g ? ` · 峰值 ${m.peak_accel_g.toFixed(1)} g` : ''}`,
         kerb: !!m.kerb && (m.kerb_after_td == null || t >= e.tTouch + m.kerb_after_td),
         stop: m.stopped && t >= e.tTouch + (m.stop_time ?? 0) ? `刹停 ${m.stop_time.toFixed(1)} s · ${m.stop_distance.toFixed(0)} m${m.kerb ? '   ·   路缘 ✗' : '   ·   未碰路缘 ✓'}` : null }
       : null;
     return {
-      t, thrust, valve, nom: this.nom.F, tank: tk, m0: L.log.tank[0][0], pc: pc > 2 * WORLD.air.pressure ? pc : 0,
+      t, thrust, valve, commandLimits: L.flight?.commandLimits ?? L.log?.commandLimits, nom: this.nom.F, tank: tk, m0: L.log.tank[0][0], pc: pc > 2 * WORLD.air.pressure ? pc : 0,
       alt: L.p(t)[1] - this.restY, vy: v[1], speed: Math.hypot(v[0], v[2]), tilt: L.tilt(t), rate: Math.hypot(w[0], w[1], w[2]), phase, verdict,
       roll: e.roll ? e.roll.at(t) : null, drive: t < 0 ? (L.log.drive ? { brake: 0, steer: 0 } : null) : L.driveState(t),
       title: this.label?.title, sub: this.label?.sub,
@@ -255,40 +346,86 @@ export default class FlightProgram extends Program {
   }
 
   drawHud(t, film) {
+    const s = this.hudState(t);
+    if (!film) { this.hud.drawLive(s); return; }
     const r = this.ctx.stage.renderer.domElement;
     this.hud.resize(r.width, r.height);
-    const s = this.hudState(t);
-    if (!film) { s.title = null; s.letterbox = document.body.classList.contains('cinema'); }
     this.hud.draw(s);
+  }
+
+  setupPanelLayout() {
+    const $ = this.ctx.ui.$;
+    const update = () => {
+      const compact = innerWidth < 900 || innerHeight <= 520;
+      if (compact !== this._compactPanels) {
+        this._compactPanels = compact;
+        document.body.classList.toggle('compact-panels', compact);
+        if (compact) $('instrument-flow').prepend($('fpanel'));
+        else this.ctx.ui.root.appendChild($('fpanel'));
+      }
+      const bar = this.transport.el.getBoundingClientRect();
+      const space = `${innerHeight - bar.top + 12}px`;
+      if (space !== this._playbackSpace) {
+        document.body.style.setProperty('--playback-space', space); this._playbackSpace = space;
+      }
+      const height = `${$('instrument-dock').getBoundingClientRect().height}px`;
+      if (height !== this._instrumentHeight) {
+        document.body.style.setProperty('--instrument-height', height); this._instrumentHeight = height;
+      }
+    };
+    this.panelObserver = new ResizeObserver(update);
+    this.panelObserver.observe(this.transport.el);
+    this.panelObserver.observe($('instrument-dock'));
+    window.addEventListener('resize', update);
+    this._panelResize = update;
+    update();
+  }
+
+  dispose() {
+    this.panelObserver?.disconnect();
+    window.removeEventListener('resize', this._panelResize);
+    this.controls?.dispose();
+    this.trajectories?.dispose();
+    document.body.classList.remove('compact-panels');
   }
 
   // ------------------------------------------------------------------ frame
   frame(dt) {
+    this._panelResize?.();
     const stage = this.ctx.stage, cam = stage.camera, ui = this.ctx.ui;
     if (!this.edit) { stage.render(dt); return; }
     let t;
     if (this.mode === 'director') {
       if (this.playing) this.T += dt * this.speed;
+      if (this.T >= this.edit.total) {
+        if (this.looping) this.T %= this.edit.total;
+        else { this.T = Math.max(0, this.edit.total - 1e-8); this.playing = false; this.transport.setPlaying(false); }
+      }
       const ev = (this.lastEval = this.edit.evaluate(this.T));
       t = ev.t; applyPose(cam, ev);
       ui.setShot(`镜头 ${this.edit.shots.indexOf(ev.shot) + 1}<b>${ev.shot.name}</b>`);
-      this.transport.setProgress((this.T % this.edit.total) / this.edit.total);
+      this.transport.setProgress(this.T / this.edit.total);
     } else {
       const [a, b] = this.timeRange();
       if (this.playing) this.simT += dt * this.speed;
-      if (this.simT > b) this.simT = a;
+      if (this.playing && this.simT >= b) {
+        if (this.looping) this.simT = a + ((this.simT - a) % (b - a));
+        else { this.simT = b; this.playing = false; this.transport.setPlaying(false); }
+      }
       t = this.simT;
       const c = this.log.p(t);
       if (this.mode === 'follow') {
-        const tgt = new THREE.Vector3(c[0], c[1] * 0.7 + 0.3, c[2]);
-        this._follow ||= cam.position.clone();
-        this._follow.lerp(tgt.clone().add(new THREE.Vector3(7.5, 3.0, 6.5)), 1 - Math.exp(-dt * 3));
-        cam.position.copy(this._follow); cam.fov = 45; cam.updateProjectionMatrix(); cam.lookAt(tgt);
+        const tgt = new THREE.Vector3(c[0], c[1], c[2]);
+        // Move the orbit centre and camera together; only user input changes the relative view.
+        cam.position.add(tgt.clone().sub(this.controls.target));
+        this.controls.target.copy(tgt);
+        this.controls.update();
       } else { this.controls.target.lerp(new THREE.Vector3(c[0], c[1], c[2]), 1 - Math.exp(-dt * 2)); this.controls.update(); }
       ui.setShot('');
       this.transport.setProgress((t - a) / (b - a));
     }
     this.applyScene(t);
+    this.trajectories.draw(t);
     if (this.world.group.userData.wind) this.world.group.userData.wind.value += dt;
     this.transport.setLabel(`${t.toFixed(2)} s`);
     this.drawHud(t, false);

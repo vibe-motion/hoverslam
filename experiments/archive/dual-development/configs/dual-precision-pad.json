@@ -1,0 +1,39 @@
+{
+  "name": "dual-precision-pad",
+  "description": "Single flat seed-0 precision landing: touchdown horizontal distance <=1.5 m and speed <=0.5 m/s. Recorded soft-body reproduction uses the same launch; not a robustness sweep.",
+  "task": "precision-pad",
+  "controllers": [
+    {
+      "name": "dual",
+      "capturePlans": true,
+      "upper_iterations": 8,
+      "lower_iterations": 2,
+      "upper_replan": 0.4,
+      "terminal_vy": -0.4,
+      "terminalWeights": {
+        "p": [
+          12,
+          200,
+          12
+        ],
+        "v": [
+          200,
+          200,
+          200
+        ],
+        "rotation": 1000,
+        "w": 64,
+        "gas": 0.05,
+        "valve": 0.2
+      }
+    }
+  ],
+  "presets": [
+    "flat"
+  ],
+  "seeds": [
+    0
+  ],
+  "record": "all",
+  "workers": 1
+}

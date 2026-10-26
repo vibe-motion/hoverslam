@@ -51,7 +51,7 @@ export async function makeController(spec, { load } = {}) {
   }
   const name = typeof spec === 'string' ? spec : spec.name;
   if (!reg) { if (name === 'zero') return { controller: new ZeroController() }; throw new Error(`controller ${name}: flight-twin registry not available`); }
-  return { controller: named(reg.createController(spec), typeof spec === 'string' ? spec : JSON.stringify(spec)) };
+  return { controller: named(await reg.loadController(spec), typeof spec === 'string' ? spec : JSON.stringify(spec)) };
 }
 
 let _reg;

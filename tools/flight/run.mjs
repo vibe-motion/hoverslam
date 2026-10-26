@@ -20,4 +20,5 @@ const { traj, metrics } = runEpisode({ task, controller, seed, preset: a.preset 
 traj.controller = { name: cfg.name, ...Object.fromEntries(Object.entries(cfg).filter(([k]) => !['name', 'traj', 'policy'].includes(k))) };
 const ms = performance.now() - t0;
 if (a.out) { fs.mkdirSync(path.dirname(path.resolve(a.out)), { recursive: true }); fs.writeFileSync(a.out, JSON.stringify(traj)); }
-console.log(JSON.stringify({ task, controller: cfg.name, seed, preset: traj.preset, ms: Math.round(ms), out: a.out ?? null, metrics }));
+console.log(JSON.stringify({ task, controller: cfg.name, seed, preset: traj.preset, ms: Math.round(ms), out: a.out ?? null, metrics,
+  ...(controller.statistics ? { controllerStats: { ...controller.statistics, planMs: controller.planMs } } : {}) }));

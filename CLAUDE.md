@@ -1,4 +1,4 @@
-# 坠 · FALL — notes for agents
+# JetCar Mini — notes for agents
 
 Soft-body crash sim of a MINI EV off a viaduct + cold-gas thruster kit, rigid twins (JS / Python) and MPC / PPO
 controllers; every outcome renders as film (three.js). The film 直到用计算机模拟 (`~/Downloads/直到用计算机模拟`,

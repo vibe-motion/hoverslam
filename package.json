@@ -1,5 +1,5 @@
 {
-  "name": "vehicle-destruction-sim",
+  "name": "jetcar-mini",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -27,7 +27,9 @@
     "film:install": "node tools/film/film.mjs program=install out=renders/安装_冷气喷口_1080p.mp4 w=1920 h=1080 fps=30 samples=16",
     "film:roll": "node tools/film/film.mjs program=flight q=run=mpc-roll out=renders/飞出_跳跃横滚360_1080p.mp4 w=1920 h=1080 fps=30 samples=16",
     "film:stop": "node tools/film/film.mjs program=flight q=run=mpc-stop-nose out=renders/飞出_落地刹车转向_1080p.mp4 w=1920 h=1080 fps=30 samples=16",
-    "film:flight": "node tools/film/film.mjs program=flight q=run=soft out=renders/飞出_软着陆_1080p.mp4 w=1920 h=1080 fps=30 samples=16 && node tools/film/film.mjs program=flight q=run=hard out=renders/飞出_硬着陆_1080p.mp4 w=1920 h=1080 fps=30 samples=16"
+    "film:flight": "node tools/film/film.mjs program=flight q=run=soft out=renders/飞出_软着陆_1080p.mp4 w=1920 h=1080 fps=30 samples=16 && node tools/film/film.mjs program=flight q=run=hard out=renders/飞出_硬着陆_1080p.mp4 w=1920 h=1080 fps=30 samples=16",
+    "demos:generate": "node tools/flight/demos.mjs",
+    "demos:view": "vite --host 127.0.0.1 --open \"/?program=flight&mode=follow&paused\""
   },
   "dependencies": {
     "three": "0.186.1"
@@ -35,5 +37,8 @@
   "devDependencies": {
     "vite": "8.3.4",
     "playwright-core": "^1.56.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

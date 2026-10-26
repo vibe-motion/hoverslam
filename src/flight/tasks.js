@@ -164,6 +164,7 @@ export class TaskTracker {
     if (S.max_vertical_speed !== undefined && !(d.vy <= S.max_vertical_speed)) return false;
     if (S.max_tilt_deg !== undefined && !(d.tilt <= S.max_tilt_deg / DEG && this.holdMaxTilt <= S.max_tilt_deg / DEG)) return false;
     if (S.max_angular_rate !== undefined && !(d.rate <= S.max_angular_rate)) return false;
+    if (S.max_horizontal_speed !== undefined && !(d.vh <= S.max_horizontal_speed)) return false;
     if (S.max_pad_distance !== undefined && !(this.padDistance() <= S.max_pad_distance)) return false;
     if (S.recover_tilt_deg !== undefined && !this.recovered) return false;
     if (this.task.target && !this.holdDone) return false;

@@ -1,0 +1,11 @@
+{
+  "id": "level-land-stop",
+  "extends": "escape-land-stop",
+  "version": 1,
+  "title": "平稳接地并刹停",
+  "summary": "No fixed touchdown point or horizontal touchdown-speed limit; require near-level contact and low angular rate before brake-only ground stopping.",
+  "success": {
+    "max_tilt_deg": 5,
+    "max_angular_rate": 0.5
+  }
+}

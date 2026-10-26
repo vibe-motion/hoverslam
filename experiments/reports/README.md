@@ -12,3 +12,5 @@ next to the study's tools (`tools/flight/<study>/`).
   "suicide burn"), gas used by each, trajectories for the film
 - `touchdown-calibration/` — grey-box fit of the twin's touchdown model to designed soft-body landings (`coldgas-rigid@2`)
 - `drive-brakes-steering/` — kit rear arms, brakes with ABS and steering after the landing (`coldgas-rigid@3`)
+- `demos/` — 当前正式非凸落地刹停与定点降落，配置、验证范围和复现入口。
+- 旧双层二开记录移至 `../archive/dual-development/reports/`，保留历史失败与版本依据。

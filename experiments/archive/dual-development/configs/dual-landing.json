@@ -1,0 +1,10 @@
+{
+  "name": "dual-landing",
+  "description": "Two representative airborne landing cases for the JS dual guidance controller. This is a reproducible example, not a robustness or full manoeuvre acceptance suite.",
+  "task": "escape-soft-landing",
+  "controllers": [{ "name": "dual" }],
+  "presets": ["flat", "nose"],
+  "seeds": [0],
+  "record": "all",
+  "workers": 1
+}

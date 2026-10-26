@@ -1,7 +1,7 @@
 // DOM of the crash viewer (mounted into #hud).
 export const CRASH_UI = `
 <header id="title">
-  <h1>坠<span>FALL</span></h1>
+  <h1 aria-label="QQ飛車 · Jet-Car Mini">QQ飛車<span>Jet-Car Mini</span></h1>
   <p>高架坠车 · 软体破坏仿真</p>
   <p class="sub" id="techline">XPBD 节点-梁晶格 · 塑性屈服 · 断裂 · GPU 四面体嵌入</p>
 </header>

@@ -1,6 +1,6 @@
 # 架构 · Architecture
 
-坠 · FALL started as an offline soft-body crash film (MINI EV off a viaduct). It is growing into a small lab:
+JetCar Mini (originally 坠 · FALL) started as an offline soft-body crash film (MINI EV off a viaduct). It is growing into a small lab:
 the same car gets a cold-gas thruster kit (10 nozzles, after the Tesla Roadster "Rocket"), controllers (MPC, PPO, ...)
 learn to fly it off the viaduct and land, and every outcome can be rendered as film. The code is split so these
 lines of work can proceed in parallel against fixed contracts.
@@ -17,6 +17,9 @@ spec/*.json  ── language-neutral facts (world, presets, thrusters, vehicle, 
    │     contract.js       state / controller / trajectory contract        experiments/ (configs, runs, reports)
    │     mpc/              pure MPC `mpc` (JS only, no base pilot): schedule param, planner, optimizers
    │                       (sampling mppi/cem, gradient, hybrid), objectives (land, roll, gas)
+   │     guidance/         dual nonlinear MPC (upper duration candidates + SQP, lower trajectory tracking)
+   │     qp/               vendored OSQP WASM; no deployment solver installation required
+   │     landing-modes.js  flight/ground ownership; ground controller currently brakes only
    │
    ├─ src/softbody/       XPBD node-beam crash solver (slow, high fidelity, JS only)
    │     solver.js         + `sim.actuators[]` hook for external forces (thrusters)

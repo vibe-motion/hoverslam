@@ -19,7 +19,7 @@ header, aside, footer, .shot { transition: opacity .6s, top .8s; z-index: 2; }
 
 #title { position: fixed; left: 34px; top: 26px; z-index: 2; pointer-events: none; text-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
 #title h1 { margin: 0; font-size: 46px; font-weight: 300; letter-spacing: 0.12em; }
-#title h1 span { font-size: 13px; letter-spacing: .5em; margin-left: 14px; vertical-align: middle; color: var(--dim); font-weight: 500; }
+#title h1 span { font-size: 13px; letter-spacing: .12em; margin-left: 14px; vertical-align: middle; color: var(--dim); font-weight: 500; }
 #title p { margin: 4px 0 0; font-size: 15px; letter-spacing: .2em; }
 #title p.sub { font-size: 11px; color: var(--dim); letter-spacing: .12em; }
 

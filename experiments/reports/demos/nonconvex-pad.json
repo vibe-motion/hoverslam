@@ -1,0 +1,385 @@
+{
+  "task": "precision-pad",
+  "preset": "flat",
+  "seed": 0,
+  "initial": {
+    "type": "launch",
+    "speed": 58.032828654162586,
+    "angle": 14.109788159839809,
+    "spin": [
+      0.05962101934943348,
+      0,
+      -0.05962101934943348
+    ],
+    "lead": 0.55,
+    "preset": "flat",
+    "draws": {
+      "speed_kmh": -5.967171345837414,
+      "angle_deg": 0.10978815983980894,
+      "spin_scale": 1.1924203869886696
+    }
+  },
+  "spec_hash": "d9dc166c15d732c5",
+  "controller": {
+    "name": "dual",
+    "capturePlans": true,
+    "upper_iterations": 8,
+    "lower_iterations": 2,
+    "upper_replan": 0.4,
+    "terminal_vy": -0.4,
+    "terminalWeights": {
+      "p": [
+        12,
+        200,
+        12
+      ],
+      "v": [
+        200,
+        200,
+        200
+      ],
+      "rotation": 1000,
+      "w": 64,
+      "gas": 0.05,
+      "valve": 0.2
+    },
+    "recovery": {
+      "enabled": true,
+      "minThrottle": 0.35,
+      "switchPenalty": 2
+    },
+    "lower_replan_steps": 2,
+    "lower_dt": 0.08,
+    "lower_nodes": 8,
+    "w_attitude": 90,
+    "w_angular_rate": 15
+  },
+  "rigid": {
+    "run": {
+      "task": "precision-pad",
+      "controller": "dual",
+      "seed": 0,
+      "preset": "flat",
+      "ms": 70151,
+      "out": "/tmp/recovery35-rigid.json",
+      "metrics": {
+        "success": true,
+        "touchdown_vertical_speed": 1.14174863059801,
+        "touchdown_horizontal_speed": 0.3522486500750313,
+        "touchdown_tilt_deg": 4.332064095208682,
+        "touchdown_angular_rate": 0.4019955407795046,
+        "peak_accel_g": 3.5757206028756228,
+        "hull_strike": false,
+        "gas_used_kg": 77.62438323753145,
+        "landing_point": [
+          -22.271662980229618,
+          16.265353511470167
+        ],
+        "pad_distance": 0.3797542111376588,
+        "return": 2.3521940851850456,
+        "reason": "landed",
+        "t_end": 4.6000000000000005,
+        "touchdown_t": 3.583
+      },
+      "controllerStats": {
+        "upperSolves": 7,
+        "lowerSolves": 72,
+        "durationCandidates": 21,
+        "lastUpperCost": null,
+        "lastLowerCost": null,
+        "lastUpperDiagnostics": null,
+        "lastLowerDiagnostics": null,
+        "lastDiagnostics": null,
+        "mode": "ground",
+        "modeTransitions": 1,
+        "departureResets": 1,
+        "flightActive": false,
+        "ground": {
+          "enabled": true,
+          "active": true,
+          "stopped": true
+        },
+        "planMs": 70090.643226
+      }
+    },
+    "audit": {
+      "input": "/tmp/recovery35-rigid.json",
+      "limits": {
+        "kind": "coast-or-burn",
+        "minThrottle": 0.35,
+        "bottomIndices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "min": [
+          0.35,
+          0.35,
+          0.35,
+          0.35,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "max": 1,
+        "bottomIds": [
+          "B_FL",
+          "B_FR",
+          "B_RL",
+          "B_RR"
+        ],
+        "coastAllOff": true,
+        "sharedIgnition": true
+      },
+      "metrics": {
+        "success": true,
+        "touchdown_vertical_speed": 1.14174863059801,
+        "touchdown_horizontal_speed": 0.3522486500750313,
+        "touchdown_tilt_deg": 4.332064095208682,
+        "touchdown_angular_rate": 0.4019955407795046,
+        "peak_accel_g": 3.5757206028756228,
+        "hull_strike": false,
+        "gas_used_kg": 77.62438323753145,
+        "landing_point": [
+          -22.271662980229618,
+          16.265353511470167
+        ],
+        "pad_distance": 0.3797542111376588,
+        "return": 2.3521940851850456,
+        "reason": "landed",
+        "t_end": 4.6000000000000005,
+        "touchdown_t": 3.583
+      },
+      "commandViolations": 0,
+      "burnRows": 110,
+      "coastRows": 29,
+      "switches": 6,
+      "intervals": [
+        {
+          "t": 0.8200000000000001,
+          "mode": "burn"
+        },
+        {
+          "t": 1.02,
+          "mode": "coast"
+        },
+        {
+          "t": 1.1400000000000001,
+          "mode": "burn"
+        },
+        {
+          "t": 1.24,
+          "mode": "coast"
+        },
+        {
+          "t": 1.56,
+          "mode": "burn"
+        },
+        {
+          "t": 3.46,
+          "mode": "coast"
+        }
+      ],
+      "restarts": [
+        {
+          "t": 1.1400000000000001,
+          "offSeconds": 0.1200000000000001
+        },
+        {
+          "t": 1.56,
+          "offSeconds": 0.32000000000000006
+        }
+      ],
+      "airborneWindowSeconds": 2.763,
+      "switchingRateHz": 2.1715526601520088,
+      "gasRangeKg": [
+        68.11761092302564,
+        145.74198896637836
+      ],
+      "minimumAvailableBottomSteadyTwr": 1.08520968097181,
+      "minimumCommandedBottomSteadyTwr": 1.1410150266401133,
+      "minimumMeasuredBottomTwrDuringBurn": 0,
+      "passes": true,
+      "interpretation": "Steady thrust uses recorded gas state and original propulsion model. Measured thrust includes ignition lag and need not exceed weight during transitions. TWR uses bottom thrust magnitude, not world-vertical projection."
+    }
+  },
+  "soft": {
+    "metrics": {
+      "touchdown_t": 3.629,
+      "touchdown_vertical_speed": 1.336,
+      "touchdown_horizontal_speed": 0.054,
+      "touchdown_tilt_deg": 4.92,
+      "touchdown_angular_rate": 0.195,
+      "hull_strike": false,
+      "hull_strike_any": false,
+      "max_tilt_hold_deg": 4.79,
+      "landing_point": [
+        -22.2,
+        16.18
+      ],
+      "pad_distance": 0.27,
+      "gas_used_touchdown_kg": 75.13,
+      "kerb": false,
+      "kerb_after_td": null,
+      "stopped": true,
+      "stop_time": 1.011,
+      "stop_distance": 0.08,
+      "gas_used_kg": 75.68,
+      "peak_accel_g": 3.48,
+      "success": true,
+      "fails": []
+    },
+    "computeSeconds": 319.3,
+    "controllerStats": {
+      "plans": 7,
+      "plan_s": 67.04,
+      "evals": 1516,
+      "upperSolves": 7,
+      "lowerSolves": 73,
+      "durationCandidates": 21,
+      "lastUpperCost": null,
+      "lastLowerCost": null,
+      "lastUpperDiagnostics": null,
+      "lastLowerDiagnostics": null,
+      "lastDiagnostics": null,
+      "mode": "ground",
+      "modeTransitions": 1,
+      "departureResets": 1,
+      "flightActive": false,
+      "ground": {
+        "enabled": true,
+        "active": true,
+        "stopped": true
+      }
+    },
+    "audit": {
+      "input": "/tmp/recovery35-soft/flight-dual-recovery35-flat.sim",
+      "limits": {
+        "kind": "coast-or-burn",
+        "minThrottle": 0.35,
+        "bottomIndices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "min": [
+          0.35,
+          0.35,
+          0.35,
+          0.35,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "max": 1,
+        "bottomIds": [
+          "B_FL",
+          "B_FR",
+          "B_RL",
+          "B_RR"
+        ],
+        "coastAllOff": true,
+        "sharedIgnition": true
+      },
+      "metrics": {
+        "touchdown_t": 3.629,
+        "touchdown_vertical_speed": 1.336,
+        "touchdown_horizontal_speed": 0.054,
+        "touchdown_tilt_deg": 4.92,
+        "touchdown_angular_rate": 0.195,
+        "hull_strike": false,
+        "hull_strike_any": false,
+        "max_tilt_hold_deg": 4.79,
+        "landing_point": [
+          -22.2,
+          16.18
+        ],
+        "pad_distance": 0.27,
+        "gas_used_touchdown_kg": 75.13,
+        "kerb": false,
+        "kerb_after_td": null,
+        "stopped": true,
+        "stop_time": 1.011,
+        "stop_distance": 0.08,
+        "gas_used_kg": 75.68,
+        "peak_accel_g": 3.48,
+        "success": true,
+        "fails": []
+      },
+      "commandViolations": 0,
+      "burnRows": 233,
+      "coastRows": 52,
+      "switches": 7,
+      "intervals": [
+        {
+          "t": 0.78,
+          "mode": "burn"
+        },
+        {
+          "t": 0.94,
+          "mode": "coast"
+        },
+        {
+          "t": 1.02,
+          "mode": "burn"
+        },
+        {
+          "t": 1.2,
+          "mode": "coast"
+        },
+        {
+          "t": 1.52,
+          "mode": "burn"
+        },
+        {
+          "t": 3.48,
+          "mode": "coast"
+        },
+        {
+          "t": 3.6,
+          "mode": "burn"
+        }
+      ],
+      "restarts": [
+        {
+          "t": 1.02,
+          "offSeconds": 0.08000000000000007
+        },
+        {
+          "t": 1.52,
+          "offSeconds": 0.32000000000000006
+        },
+        {
+          "t": 3.6,
+          "offSeconds": 0.1200000000000001
+        }
+      ],
+      "airborneWindowSeconds": 2.84900000000151,
+      "switchingRateHz": 2.457002457001155,
+      "gasRangeKg": [
+        70.803,
+        145.739
+      ],
+      "minimumAvailableBottomSteadyTwr": 1.0852126426763071,
+      "minimumCommandedBottomSteadyTwr": 1.1387684603214325,
+      "minimumMeasuredBottomTwrDuringBurn": 0.09928124570713205,
+      "passes": true,
+      "interpretation": "Steady thrust uses recorded gas state and original propulsion model. Measured thrust includes ignition lag and need not exceed weight during transitions. TWR uses bottom thrust magnitude, not world-vertical projection."
+    }
+  },
+  "verification": {
+    "build": true,
+    "inverseTimeBoundaryChecks": true,
+    "recordedCandidateScoresChecked": 741,
+    "fullSuite": "Not rerun; known prior suite failures remain documented."
+  },
+  "scope": "Flat seed 0 only. Command lower bound, not instantaneous thrust; original valve lag and hardware unchanged. Penalty is 2/offSeconds at restart; first ignition free. No online simulation."
+}

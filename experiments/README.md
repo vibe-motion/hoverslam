@@ -263,3 +263,11 @@ controller (`node tools/flight/run.mjs task=hover-hold controller=mlp policy=...
 keeps the car level (touchdown tilt ~1°) but starts braking too late (touchdown ~5.5 m/s, hull strike on every
 preset); the sharp "free-fall, then brake" switch of pd is not captured by the 64-64 tanh MLP. Next steps: longer
 runs, a time-to-impact feature in the observation, or a residual policy on pd.
+
+## 正式 demo
+
+只维护 `configs/nonconvex-stop.json`（落地刹停.非凸）和 `configs/nonconvex-pad.json`
+（定点降落.非凸）作为默认展示案例。`npm run demos:generate` 可重新生成全部录制；
+`only=nonconvex-stop` 或 `only=nonconvex-pad` 可限定单例。软体录制全部本地保存、Git-ignored。
+指标见 `reports/demos/`；旧双层二开配置与历史记录移入 `archive/dual-development/`。
+其他既有研究配置仍可按原入口使用，但不属于正式 demo 列表。

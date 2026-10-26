@@ -470,7 +470,8 @@ stop_speed` (`t_stop` = that step's `t`; no `landed` in stop tasks), other tasks
 **8.6 Success** (only for `landed` and `stopped`), every key optional, evaluated on the touchdown snapshot (§5.6):
 `|v_y| ≤ max_vertical_speed`; tilt `≤ max_tilt_deg` at touchdown and at every control step after it until the end (the
 hold window; up to the stop for `stopped`); `|ω| ≤ max_angular_rate`; pad distance (COM `(x, z)` at touchdown to
-`pad.center`) `≤ max_pad_distance`; `recovered` if `recover_tilt_deg` is given; hover tasks need the hold complete;
+`pad.center`) `≤ max_pad_distance`; horizontal speed `√(v_x² + v_z²) ≤ max_horizontal_speed`; `recovered` if
+`recover_tilt_deg` is given; hover tasks need the hold complete;
 `stopped` also needs `t_stop − t_touchdown ≤ stop_within` if given. No hull strike (or kerb) is implied by reaching
 `landed` / `stopped` unless the task forbids it.
 
@@ -506,3 +507,10 @@ the NU valve commands or the NA-long action incl. brake and steer (§5.13; `env.
 `coldgas.vecenv.BatchColdGasEnv(task, n, seed)` (actions `(n, NU)` or `(n, NA)`) runs n lanes on one numpy twin, lane `i`'s `j`-th episode with seed
 `seed + i + j·n`, same-step auto-reset (final obs/metrics in `info['final'][i]`); every lane equals the scalar env
 with the same seed bit for bit.
+
+
+### 正式刹停演示任务
+
+`level-land-stop` 继承 `escape-land-stop`，接地倾角与落地保持倾角上限收紧至 5°，接地角速度上限为 0.5 rad/s。
+不设落点或接地水平速度约束，仍要求无车身/路缘碰撞并在原窗口内刹停。此任务只改变验收条件，
+硬件、接触模型和刹车参数不变；JS 在 `src/core/spec.js` 注册，Python 按原规则自动加载任务文件。

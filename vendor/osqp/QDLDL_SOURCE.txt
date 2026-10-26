@@ -1,0 +1,3 @@
+QDLDL v0.1.8
+Source: https://github.com/osqp/qdldl/releases/tag/v0.1.8
+Source archive SHA256: ecf113fd6ad8714f16289eb4d5f4d8b27842b6775b978c39def5913f983f6daa

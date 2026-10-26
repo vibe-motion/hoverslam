@@ -200,6 +200,8 @@ class TaskTracker:
             return False
         if 'max_angular_rate' in S and not d['rate'] <= S['max_angular_rate']:
             return False
+        if 'max_horizontal_speed' in S and not d['vh'] <= S['max_horizontal_speed']:
+            return False
         if 'max_pad_distance' in S and not self.pad_distance() <= S['max_pad_distance']:
             return False
         if 'recover_tilt_deg' in S and not self.recovered:

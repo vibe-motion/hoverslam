@@ -1,0 +1,85 @@
+{
+  "task": "precision-pad",
+  "preset": "flat",
+  "seed": 0,
+  "initial": {
+    "type": "launch",
+    "speed": 58.032828654162586,
+    "angle": 14.109788159839809,
+    "spin": [
+      0.05962101934943348,
+      0,
+      -0.05962101934943348
+    ],
+    "lead": 0.55,
+    "preset": "flat",
+    "draws": {
+      "speed_kmh": -5.967171345837414,
+      "angle_deg": 0.10978815983980894,
+      "spin_scale": 1.1924203869886696
+    }
+  },
+  "limits": {
+    "pad_distance_m": 1.5,
+    "touchdown_horizontal_speed_mps": 0.5
+  },
+  "rigid": {
+    "metrics": {
+      "success": true,
+      "touchdown_vertical_speed": 0.3133418383268094,
+      "touchdown_horizontal_speed": 0.032205604221264554,
+      "touchdown_tilt_deg": 7.195738056941037,
+      "touchdown_angular_rate": 0.17554538381490287,
+      "peak_accel_g": 3.0903637528721033,
+      "hull_strike": false,
+      "gas_used_kg": 64.1206976883331,
+      "landing_point": [
+        -22.023551605460685,
+        16.09459184712097
+      ],
+      "pad_distance": 0.09747971923191395,
+      "return": 3.9392269019833615,
+      "reason": "landed",
+      "t_end": 4.44,
+      "touchdown_t": 3.44
+    },
+    "compute_ms": 7031
+  },
+  "soft": {
+    "metrics": {
+      "touchdown_t": 3.403,
+      "touchdown_vertical_speed": 1.104,
+      "touchdown_horizontal_speed": 0.224,
+      "touchdown_tilt_deg": 7.86,
+      "touchdown_angular_rate": 0.357,
+      "hull_strike": false,
+      "hull_strike_any": false,
+      "max_tilt_hold_deg": 7.57,
+      "landing_point": [
+        -22.06,
+        16.06
+      ],
+      "pad_distance": 0.09,
+      "gas_used_touchdown_kg": 59.53,
+      "kerb": false,
+      "kerb_after_td": null,
+      "stopped": true,
+      "stop_time": 1.017,
+      "stop_distance": 0.12,
+      "gas_used_kg": 60.96,
+      "peak_accel_g": 3.01,
+      "success": true,
+      "fails": []
+    },
+    "compute_seconds": 207.626,
+    "damage": {
+      "detached": [],
+      "glass": [],
+      "torn_tets": 0,
+      "max_plastic": 0.3576,
+      "damage_sum": 17.08,
+      "particles": 5
+    }
+  },
+  "scope": "One fixed flat launch, not a robustness sweep. Hardware unchanged; closed-loop recording, not online viewer simulation."
+}

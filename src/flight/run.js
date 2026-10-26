@@ -22,7 +22,11 @@ export function runEpisode({ task, controller = 'zero', seed = 0, preset = null,
     if (done) metrics = inf.metrics;
   }
   if (rec) rec.sample(env.twin);
-  return { metrics, events: env.twin.events, traj: rec ? rec.finish({ events: env.twin.events, metrics, spec_hash: specHash }) : null };
+  const planningTrace = ctrl.config?.capturePlans === true ? ctrl.planningTrace : null;
+  const traj = rec ? rec.finish({ events: env.twin.events, metrics, spec_hash: specHash }) : null;
+  if (traj && planningTrace) traj.planningTrace = planningTrace;
+  if (traj && ctrl.commandLimits) traj.commandLimits = structuredClone(ctrl.commandLimits);
+  return { metrics, events: env.twin.events, traj };
 }
 // trajectories record the controller config without embedded traj/policy blobs
 function stripObjects(cfg) { const { traj, policy, ...rest } = cfg; return { ...rest, ...(traj ? { traj: '<embedded>' } : {}), ...(policy ? { policy: '<embedded>' } : {}) }; }

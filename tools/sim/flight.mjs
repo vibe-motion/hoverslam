@@ -66,8 +66,10 @@ sim.run(sc.duration, s => {
   k++; frames.push(enc.encode(s, k % 4 === 0));
   if (k % 25 === 0) process.stdout.write(`\r${name} t=${s.time.toFixed(2)} y=${rig.state.p[1].toFixed(2)} vy=${rig.state.v[1].toFixed(2)} tilt=${(rig.state.tilt * 57.3 || 0).toFixed(1)} gasLeft=${rig.prop.m.toFixed(1)} ${rig.state.phase} ${((Date.now() - t0) / 1000).toFixed(0)}s   `);
 });
-const cstats = controller.plans != null ? { plans: controller.plans, plan_s: +(controller.planMs / 1000).toFixed(2), ...(controller.evals != null ? { evals: controller.evals } : {}) } : null;
-const flight = { ...rig.summary(sim), ...(ctlConfig ? { controllerConfig: ctlConfig } : {}), ...(cstats ? { controllerStats: cstats } : {}), preset, spinScale, init: init || null, replayOf: traj ? { file: ctlSpec.slice(7), producer: traj.producer, controller: traj.controller, seed: traj.seed, metrics: traj.metrics } : null, computeSeconds: (Date.now() - t0) / 1000, settled: sc.level ? 'levelled (own settle)' : 'settled-coldgas.bin' };
+const cstats = controller.plans != null ? { plans: controller.plans, plan_s: +(controller.planMs / 1000).toFixed(2), ...(controller.evals != null ? { evals: controller.evals } : {}), ...(controller.statistics || {}) } : null;
+const flight = { ...rig.summary(sim), ...(controller.commandLimits ? { commandLimits: structuredClone(controller.commandLimits) } : {}), ...(ctlConfig ? { controllerConfig: ctlConfig } : {}), ...(cstats ? { controllerStats: cstats } : {}),
+  ...(ctlConfig?.capturePlans === true && Array.isArray(controller.planningTrace) ? { planningTrace: controller.planningTrace } : {}),
+  preset, spinScale, init: init || null, replayOf: traj ? { file: ctlSpec.slice(7), producer: traj.producer, controller: traj.controller, seed: traj.seed, metrics: traj.metrics } : null, computeSeconds: (Date.now() - t0) / 1000, settled: sc.level ? 'levelled (own settle)' : 'settled-coldgas.bin' };
 const meta = finalMeta(sim, enc, { name, label: `${P.label} · ${flight.controller}`, propulsion: rig.propulsionLog(), flight });
 let size;
 if (args.outDir) { // scratch output outside public/sims

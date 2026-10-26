@@ -44,10 +44,10 @@ function table(summary) {
 
 if (!isMainThread) { // ------------------------------------------------------------------------------ worker
   const { runEpisode } = await import('../../src/flight/run.js');
-  const { createController } = await import('../../src/flight/controllers/index.js');
-  parentPort.on('message', job => {
+  const { loadController } = await import('../../src/flight/controllers/index.js');
+  parentPort.on('message', async job => {
     const t0 = performance.now();
-    const ctrl = createController(job.controller);
+    const ctrl = await loadController(job.controller);
     const r = runEpisode({ task: job.task, controller: ctrl, seed: job.seed, preset: job.preset, specHash: workerData.hash });
     const wall = (performance.now() - t0) / 1000;
     if (job.traj) { r.traj.controller = job.shown; fs.writeFileSync(job.traj, JSON.stringify(r.traj)); }

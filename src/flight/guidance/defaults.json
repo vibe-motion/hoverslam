@@ -1,0 +1,39 @@
+{
+  "_doc": "Defaults for the two-level nonlinear controller in src/flight/guidance. The upper planner optimizes a contact-free landing trajectory; the lower planner tracks its state and actuator schedule with short-horizon SQP. This is a planning approximation, not a contact-aware landing controller.",
+  "upper_nodes": 16,
+  "upper_iterations": 3,
+  "upper_replan": 0.8,
+  "upper_time_min": 0.65,
+  "upper_time_max": 4.0,
+  "upper_time_candidates": [0.85, 1.0, 1.15],
+  "lower_nodes": 6,
+  "lower_iterations": 1,
+  "lower_dt": 0.1,
+  "lower_replan_steps": 5,
+  "terminal_vy": -0.8,
+  "terminal_height": 0.0,
+  "landing_time_margin": 0.0,
+  "ballistic_time_allowance": 1.0,
+  "duration_penalty": 8.0,
+  "w_position": 2.0,
+  "w_velocity": 0.8,
+  "w_attitude": 30.0,
+  "w_angular_rate": 5.0,
+  "w_gas": 0.03,
+  "w_valve": 0.15,
+  "w_control": 0.03,
+  "terminal_position": 12.0,
+  "terminal_velocity": 5.0,
+  "terminal_attitude": 1000.0,
+  "terminal_angular_rate": 64.0,
+  "terminal_gas": 0.05,
+  "terminal_valve": 0.2,
+  "trust": {
+    "state": [10, 10, 10, 10, 10, 10, 0.5, 0.5, 0.5, 5, 5, 5, 30, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "control": 0.5
+  },
+  "ground": {
+    "_doc": "Landing mode uses the brake-only ground controller. No steering optimization, throttle or RCS boost.",
+    "enabled": true
+  }
+}

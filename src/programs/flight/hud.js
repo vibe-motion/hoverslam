@@ -5,6 +5,8 @@
 // touchdown verdict against the task criteria (stop tasks: stopping time / distance, kerb).
 import { PROPULSION, DRIVE } from '../../core/spec.js';
 import { GROUPS } from '../../flight/contract.js';
+import { flightResult } from './result.js';
+export { verdictLabel } from './result.js';
 
 const FONT = '-apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif';
 const MINT = '#93d3b8', HOT = '#ff8a3d', RED = '#ff5a4e', FG = 'rgba(238,242,240,0.95)', DIM = 'rgba(238,242,240,0.58)';
@@ -18,6 +20,52 @@ export class FlightHUD {
     this.ids = PROPULSION.nozzles.map(z => z.id);
   }
   resize(w, h) { if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; } }
+
+  /** Interactive cards share one CSS flow; the full-frame canvas remains the offline film source. */
+  mountLive(dock) {
+    this.live = {};
+    for (const [name, width, label] of [['thrust', 311, '喷口遥测'], ['drive', 178, '制动与转向遥测'], ['status', 282, '飞行状态遥测']]) {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'instrument-card'; canvas.style.width = `${width}px`;
+      canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', label);
+      dock.appendChild(canvas); this.live[name] = canvas;
+    }
+    this.live.verdict = document.createElement('section');
+    this.live.verdict.className = 'experiment-result';
+    this.live.verdict.setAttribute('aria-label', '实验结果');
+    this.live.verdict.innerHTML = '<h2></h2><div class="result-metrics"></div><p class="result-note"></p>';
+    dock.parentElement.parentElement.appendChild(this.live.verdict);
+  }
+
+  drawLive(s) {
+    // A fixed logical sheet separates card geometry from viewport size and device pixel ratio.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.resize(Math.round(1920 * dpr), Math.round(1080 * dpr));
+    this.draw({ ...s, title: null, verdict: null, letterbox: false });
+    const rows = s.roll != null ? 10 : 9;
+    for (const [name, rect] of Object.entries({ thrust: [22, 840, 311, 222], drive: [347, 840, 178, 222], status: [1618, 22, 282, rows * 25 + 54] })) {
+      const dst = this.live[name], [x, y, w, h] = rect;
+      dst.hidden = name === 'drive' && !s.drive;
+      const W = Math.round(w * dpr), H = Math.round(h * dpr);
+      if (dst.width !== W || dst.height !== H) { dst.width = W; dst.height = H; }
+      dst.style.height = `${h}px`;
+      const g = dst.getContext('2d'); g.clearRect(0, 0, W, H);
+      g.drawImage(this.canvas, x * dpr, y * dpr, w * dpr, h * dpr, 0, 0, W, H);
+    }
+    const v = s.verdict, box = this.live.verdict;
+    box.hidden = !v;
+    if (v) {
+      const result = flightResult(v), key = JSON.stringify(result);
+      if (key !== this.resultKey) {
+        this.resultKey = key;
+        box.querySelector('h2').textContent = result.title;
+        box.querySelector('h2').style.color = result.color;
+        const rows = result.lines.map(text => { const p = document.createElement('p'); p.textContent = text; return p; });
+        box.querySelector('.result-metrics').replaceChildren(...rows);
+        box.querySelector('.result-note').textContent = result.note || '';
+      }
+    }
+  }
 
   /**
    * @param s {t, thrust[], valve[], nom[], tank:{m,T,p}, m0, pc, pset, alt, vy, tilt, rate, speed, phase, roll (deg or null),
@@ -41,6 +89,9 @@ export class FlightHUD {
     const bx = px(40), by = H - lb - px(96), bh = px(92), bw = px(16), gap = px(9), ggap = px(26);
     panel(g, bx - px(18), by - bh - px(52), px(18) * 2 + 10 * bw + 7 * gap + 2 * ggap, bh + px(130), k);
     g.font = `500 ${px(12)}px ${FONT}`; g.fillStyle = DIM; g.fillText('冷气推力器 · 阀门开度', bx, by - bh - px(26));
+    g.font = `500 ${px(9)}px ${FONT}`;
+    g.fillStyle = '#397DE0'; g.fillText('━ 最小油门', bx + px(155), by - bh - px(26));
+    g.fillStyle = '#D94A58'; g.fillText('━ 最大油门', bx + px(218), by - bh - px(26));
     let x = bx;
     for (const grp of ['bottom', 'rear', 'side']) {
       const idx = GROUPS[grp];
@@ -50,9 +101,15 @@ export class FlightHUD {
         const v = clamp01(s.valve[i]), f = s.nom[i] > 0 ? clamp01(s.thrust[i] / s.nom[i]) : 0;
         g.fillStyle = 'rgba(255,255,255,0.10)'; g.fillRect(x, by - bh, bw, bh);
         // valve opening (outline) and delivered thrust (fill): they part when the regulator drops out
-        g.fillStyle = f > 0.02 ? MINT : 'rgba(147,211,184,0.35)';
+        g.fillStyle = 'rgba(255,255,255,0.85)';
         g.fillRect(x, by - bh * f, bw, bh * f);
         g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillRect(x, by - bh * v - px(1.5), bw, px(3));
+        // Command bounds are distinct from the measured valve opening and delivered thrust.
+        // Draw the in-width limit ticks last so they remain visible above the fill and opening marker.
+        const limitAt = (values, fallback) => Array.isArray(values) ? (values[i] ?? fallback) : (values ?? fallback);
+        const lo = clamp01(limitAt(s.commandLimits?.min, 0)), hi = clamp01(limitAt(s.commandLimits?.max, 1));
+        g.fillStyle = '#397DE0'; g.fillRect(x, by - bh * lo - px(1), bw, px(2));
+        g.fillStyle = '#D94A58'; g.fillRect(x, by - bh * hi - px(1), bw, px(2));
         g.save(); g.translate(x + bw / 2 + px(3.5), by + px(6)); g.rotate(Math.PI / 2);
         g.fillStyle = f > 0.02 ? FG : DIM; g.font = `500 ${px(9)}px ${FONT}`; g.fillText(this.ids[i].replace('_', ''), 0, 0); g.restore();
         x += bw + gap;
@@ -106,17 +163,13 @@ export class FlightHUD {
     g.fillStyle = fr > 0.35 ? MINT : HOT; g.fillRect(tx, gy, tw * fr, px(4));
     // ---- verdict (centre) after touchdown
     if (s.verdict) {
-      const v = s.verdict, ok = v.success, col = ok ? MINT : RED;
-      const cx = W / 2, cy = lb + px(150);
+      const result = flightResult(s.verdict), cx = W / 2, cy = lb + px(150);
       shadow(g, k);
       g.textAlign = 'center';
-      g.fillStyle = col; g.font = `300 ${px(56)}px ${FONT}`; g.fillText(verdictLabel(v), cx, cy);
+      g.fillStyle = result.color; g.font = `300 ${px(56)}px ${FONT}`; g.fillText(result.title, cx, cy);
       g.fillStyle = FG; g.font = `400 ${px(16)}px ${FONT}`;
-      const cr = v.crit || {};
-      const mark = (val, lim, unit, d = 2) => `${val.toFixed(d)}${unit}${lim !== undefined ? (val <= lim ? ' ✓' : ' ✗') : ''}`;
-      g.fillText(`触地垂直速度 ${mark(v.vs, cr.max_vertical_speed, ' m/s')}   ·   倾角 ${mark(v.tilt, cr.max_tilt_deg, '°', 1)}   ·   角速度 ${mark(v.rate, cr.max_angular_rate, ' rad/s')}   ·   ${v.hull ? '车身触地 ✗' : '四轮着地 ✓'}${v.hold !== undefined && cr.upright_hold ? `   ·   ${cr.upright_hold} s 内最大倾角 ${mark(v.hold, cr.max_tilt_deg, '°', 0)}` : ''}`, cx, cy + px(34));
-      if (v.stop) { g.fillStyle = FG; g.font = `400 ${px(16)}px ${FONT}`; g.fillText(v.stop, cx, cy + px(58)); }
-      if (v.note) { g.fillStyle = DIM; g.font = `400 ${px(13)}px ${FONT}`; g.fillText(v.note, cx, cy + px(v.stop ? 82 : 58)); }
+      result.lines.forEach((line, i) => g.fillText(line, cx, cy + px(34 + i * 24)));
+      if (result.note) { g.fillStyle = DIM; g.font = `400 ${px(13)}px ${FONT}`; g.fillText(result.note, cx, cy + px(34 + result.lines.length * 24)); }
       g.textAlign = 'left';
       noShadow(g);
     }
@@ -125,14 +178,6 @@ export class FlightHUD {
 }
 
 const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
-/** 软着陆 = task success; 硬着陆 = the touchdown itself broke a limit; 着陆后翻车 = soft touchdown, then a hull strike / roll-over. */
-export function verdictLabel(v) {
-  if (v.success) return v.crit?.stop_speed !== undefined ? '软着陆 · 刹停' : '软着陆';
-  if (v.kerb) return '冲上路缘';
-  const c = v.crit || {};
-  const hardTd = (c.max_vertical_speed !== undefined && v.vs > c.max_vertical_speed) || (c.max_tilt_deg !== undefined && v.tilt > c.max_tilt_deg) || (c.max_angular_rate !== undefined && v.rate > c.max_angular_rate);
-  return hardTd ? '硬着陆' : '着陆后翻车';
-}
 const phaseLabel = p => ({ deck: '桥面', air: '空中', ground: '着地' })[p] || p || '';
 function panel(g, x, y, w, h, k) {
   g.save(); g.fillStyle = 'rgba(14,18,20,0.46)'; g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = Math.max(1, k);

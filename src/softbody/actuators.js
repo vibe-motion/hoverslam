@@ -524,19 +524,22 @@ export class ThrusterRig {
       touchdown_t: +td.t.toFixed(3), touchdown_vertical_speed: +td.vs.toFixed(3), touchdown_horizontal_speed: +td.hs.toFixed(3),
       touchdown_tilt_deg: +td.tilt.toFixed(2), touchdown_angular_rate: +td.rate.toFixed(3), hull_strike: !!(td.hull || this.strikeInHold),
       hull_strike_any: this.strikeT !== null, max_tilt_hold_deg: +this.maxTiltAfterTd.toFixed(2), landing_point: td.p.map(v => +v.toFixed(2)),
+      pad_distance: this.task?.pad ? +Math.hypot(td.p[0] - this.task.pad.center[0], td.p[1] - this.task.pad.center[2]).toFixed(2) : null,
       gas_used_touchdown_kg: +td.gas.toFixed(2),
       kerb: this.kerbT !== null, kerb_after_td: this.kerbT !== null ? +(this.kerbT - td.t).toFixed(3) : null,
       stopped: this.stopT !== null, stop_time: this.stopT !== null ? +(this.stopT - td.t).toFixed(3) : null,
       stop_distance: this.stopT !== null ? +Math.hypot(this.stopP[0] - td.p[0], this.stopP[1] - td.p[1]).toFixed(2) : null,
-    } : { touchdown_t: null, hull_strike: this.strikeT !== null, kerb: this.kerbT !== null };
+    } : { touchdown_t: null, pad_distance: null, hull_strike: this.strikeT !== null, kerb: this.kerbT !== null };
     m.gas_used_kg = +(this.prop.m0 - this.prop.m).toFixed(2);
     m.peak_accel_g = +this.peakAccel.toFixed(2);
     const fails = [];
     if (!td) fails.push('no touchdown');
     else {
       if (crit.max_vertical_speed !== undefined && td.vs > crit.max_vertical_speed) fails.push('vertical_speed');
+      if (crit.max_horizontal_speed !== undefined && td.hs > crit.max_horizontal_speed) fails.push('horizontal_speed');
       if (crit.max_tilt_deg !== undefined && td.tilt > crit.max_tilt_deg) fails.push('tilt');
       if (crit.max_angular_rate !== undefined && td.rate > crit.max_angular_rate) fails.push('angular_rate');
+      if (crit.max_pad_distance !== undefined && (!this.task?.pad || Math.hypot(td.p[0] - this.task.pad.center[0], td.p[1] - this.task.pad.center[2]) > crit.max_pad_distance)) fails.push('pad_distance');
       if (crit.hull_strike === false && m.hull_strike) fails.push('hull_strike');
       if (crit.max_tilt_deg !== undefined && this.maxTiltAfterTd > crit.max_tilt_deg) fails.push('upright_hold');
       if (!holdDone) fails.push('hold_incomplete');
@@ -555,6 +558,6 @@ export class ThrusterRig {
       detached: ev.filter(e => e.type === 'detach').map(e => e.piece), glass: ev.filter(e => e.type === 'glass' || e.type === 'lens' || e.type === 'crack').map(e => e.group),
       torn_tets: tears, max_plastic: +maxPl.toFixed(4), damage_sum: +dmg.toFixed(2), particles: sim.np,
     };
-    return { controller: this.controllerName, task: this.task?.id, armDelay: this.armDelay, events: this.events.slice().sort((a, b) => a.t - b.t), metrics: m, damage };
+    return { controller: this.controllerName, task: this.task?.id, pad: this.task?.pad ?? null, armDelay: this.armDelay, events: this.events.slice().sort((a, b) => a.t - b.t), metrics: m, damage };
   }
 }

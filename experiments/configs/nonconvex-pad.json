@@ -1,0 +1,49 @@
+{
+  "name": "nonconvex-pad",
+  "description": "定点降落.非凸; flat seed 0, 35% bottom minimum, inverse-off-time restart penalty 2, brake-only ground mode.",
+  "task": "precision-pad",
+  "controllers": [
+    {
+      "name": "dual",
+      "capturePlans": true,
+      "upper_iterations": 8,
+      "lower_iterations": 2,
+      "upper_replan": 0.4,
+      "terminal_vy": -0.4,
+      "terminalWeights": {
+        "p": [
+          12,
+          200,
+          12
+        ],
+        "v": [
+          200,
+          200,
+          200
+        ],
+        "rotation": 1000,
+        "w": 64,
+        "gas": 0.05,
+        "valve": 0.2
+      },
+      "recovery": {
+        "enabled": true,
+        "minThrottle": 0.35,
+        "switchPenalty": 2
+      },
+      "lower_replan_steps": 2,
+      "lower_dt": 0.08,
+      "lower_nodes": 8,
+      "w_attitude": 90,
+      "w_angular_rate": 15
+    }
+  ],
+  "presets": [
+    "flat"
+  ],
+  "seeds": [
+    0
+  ],
+  "record": "all",
+  "workers": 1
+}

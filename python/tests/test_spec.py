@@ -28,6 +28,7 @@ def test_tasks_resolve_and_sample_like_js(node):
         assert [sample_initial(t, s) for s in range(25)] == v['init']
     pad = load_task('precision-pad')
     assert pad['success']['max_vertical_speed'] == 2.0 and pad['success']['max_pad_distance'] == 1.5
+    assert pad['success']['max_horizontal_speed'] == 0.5
     assert pad['metrics'][:2] == ['success', 'touchdown_vertical_speed'] and pad['metrics'][-1] == 'pad_distance'
     assert load_task('tumble-recovery')['initial']['presets'] == ['roof', 'corner', 'side']
     assert len(NOZZLE_IDS) == 10

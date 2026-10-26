@@ -17,7 +17,7 @@ import { CRASH_UI, CRASH_GROUPS } from './ui.js';
 const countBelow = (arr, t) => { let n = 0; for (let i = 0; i < arr.length; i++) if (arr[i] <= t) n++; return n; };
 
 export default class CrashProgram extends Program {
-  static meta = { id: 'crash', title: '坠 · 高架坠车软体破坏仿真' };
+  static meta = { id: 'crash', title: 'JetCar Mini · 软体破坏仿真' };
 
   async init() {
     const { stage, ui, assets, params } = this.ctx;
